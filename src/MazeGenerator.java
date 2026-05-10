@@ -1,54 +1,90 @@
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
-public class MazeGenerator {
-
+public class MazeGenerator
+{
     int rows, cols;
     char[][] maze;
 
-    public MazeGenerator(int size) {
+    public MazeGenerator(int size)
+    {
         rows = size;
         cols = size;
         maze = new char[rows][cols];
-
         generateMaze();
     }
-
-    void generateMaze() {
-        Random rand = new Random();
-
-        // Fill with walls
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+    void generateMaze()
+    {
+        for(int i=0 ; i<rows ; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
                 maze[i][j] = '#';
             }
         }
-
-        // Create path
-        int r = 1, c = 1;
-        maze[r][c] = '.';
-
-        while (r < rows - 2 || c < cols - 2) {
-
-            if (r < rows - 2 && (c == cols - 2 || rand.nextBoolean())) {
-                r++;
-            } else {
-                c++;
-            }
-
-            maze[r][c] = '.';
-        }
-
-        // Random open spaces
-        for (int i = 1; i < rows - 1; i++) {
-            for (int j = 1; j < cols - 1; j++) {
-                if (maze[i][j] == '#' && rand.nextInt(3) == 0) {
-                    maze[i][j] = '.';
+        dfs(1,1);
+        addExtraPaths(rows); // more size → more complexity//----------------
+        placeExit();
+    }
+    void placeExit()
+    {
+        for(int i = rows-2; i > 0; i--)
+        {
+            for(int j = cols-2; j > 0; j--)
+            {
+                if(maze[i][j] == '.')
+                {
+                    maze[i][j] = 'E';
+                    return;
                 }
             }
         }
-
-        // Start & End
-        maze[1][1] = '.';
-        maze[rows - 2][cols - 2] = 'E';
     }
+    //optional more paths-------------
+    void addExtraPaths(int count) {
+        Random rand = new Random();
+
+        for(int i = 0; i < count; i++) {
+            int r = rand.nextInt(rows-2) + 1;
+            int c = rand.nextInt(cols-2) + 1;
+
+            if(maze[r][c] == '#') {
+                maze[r][c] = '.'; // break wall → new path
+            }
+        }
+    }
+    //--------------------
+    void dfs(int r, int c)
+    {
+        maze[r][c] = '.';
+        int[][] dirs = {
+                {0,2}, {0,-2}, {2,0}, {-2,0}
+        };
+        //Randomize maze generation
+        List<int[]> directions = Arrays.asList(dirs);
+        Collections.shuffle(directions);
+
+        for(int[] d : directions) {
+            int nr = r + d[0];
+            int nc = c + d[1];
+            if((nr > 0) && (nc > 0) && (nr < (rows - 1)) && (nc < (cols - 1)) && (maze[nr][nc] == '#')){
+                maze[r+d[0]/2][c+d[1]/2] = '.';
+                dfs(nr, nc);
+            }
+        }
+    }
+    void printMaze() {
+        for(int i=0 ; i<rows ; i++)
+        {
+            for (int j = 0; j < cols; j++) {
+                if(maze[i][j] == '#') System.out.print("█ ");
+                else if(maze[i][j] == 'E') System.out.print("E ");
+                else System.out.print("  ");
+            }
+            System.out.println();
+        }
+    }
+
 }
