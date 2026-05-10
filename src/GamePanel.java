@@ -9,21 +9,20 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
 
-
 public class GamePanel extends JPanel implements KeyListener, MouseListener
 {
     GameFrame frame;
 
-    boolean paused = false;
-
     int timeLeft;
+
     Timer gameTimer;
-    boolean gameOver = false;
 
     ArrayList<Point> shortestPath = new ArrayList<>();
+
     boolean showPath = false;
 
     ArrayList<Point> coins = new ArrayList<>();
+
     int score = 0;
 
     SoundPlayer sound = new SoundPlayer();
@@ -37,15 +36,37 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
 
     int level = 1;
 
+    // =========================
+    // BUTTON AREAS
+    // =========================
+
+    Rectangle homeButton =
+            new Rectangle(20,20,120,40);
+
+    Rectangle pathButton =
+            new Rectangle(160,20,180,40);
+
+    Rectangle pauseButton =
+            new Rectangle(740,20,120,40);
+
+    Rectangle resumeButton =
+            new Rectangle(330,300,240,55);
+
+    Rectangle restartButton =
+            new Rectangle(330,380,240,55);
+
+    Rectangle menuButton =
+            new Rectangle(330,460,240,55);
+
+    // =========================
+    // CONSTRUCTOR
+    // =========================
+
     public GamePanel(GameFrame frame)
     {
         this.frame = frame;
 
-        setBackground(Color.WHITE);
-
-        mg = new MazeGenerator(10 + level * 5);
-
-        generateCoins(level * 3);
+        setBackground(new Color(235,235,235));
 
         setFocusable(true);
 
@@ -53,9 +74,9 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
 
         addMouseListener(this);
 
-        sound.playLoop("bg.wav");
+        setLevel(1);
 
-        startTimer();
+        sound.playLoop("bg.wav");
     }
 
     // =========================
@@ -71,13 +92,17 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
 
         steps = 0;
 
+        showPath = false;
+
+        shortestPath.clear();
+
         mg = new MazeGenerator(10 + level * 5);
 
         generateCoins(level * 3);
 
-        startTimer();
+        frame.gameState = GameState.PLAYING;
 
-        gameOver = false;
+        startTimer(true);
 
         repaint();
     }
@@ -86,48 +111,41 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
     // TIMER
     // =========================
 
-    void startTimer()
+    void startTimer(boolean resetTime)
     {
-        timeLeft = 60 + level * 10;
+        if(resetTime)
+        {
+            timeLeft = 60 + level * 10;
+        }
 
         if(gameTimer != null)
+        {
             gameTimer.stop();
+        }
 
         gameTimer = new Timer(1000, e -> {
+
+            if(frame.gameState != GameState.PLAYING)
+            {
+                return;
+            }
 
             timeLeft--;
 
             if(timeLeft <= 0)
             {
-                gameOver = true;
+                frame.gameState = GameState.GAME_OVER;
 
                 gameTimer.stop();
 
-                String[] options = {"Restart", "Home", "Exit"};
+                sound.stopBackground();
 
-                int choice = JOptionPane.showOptionDialog(
+                JOptionPane.showMessageDialog(
                         this,
-                        "Time Up!",
-                        "Game Over",
-                        JOptionPane.DEFAULT_OPTION,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        null,
-                        options,
-                        options[0]
+                        "Time Up!"
                 );
 
-                if(choice == 0)
-                {
-                    setLevel(level);
-                }
-                else if(choice == 1)
-                {
-                    frame.showHome();
-                }
-                else
-                {
-                    System.exit(0);
-                }
+                frame.showHome();
             }
 
             repaint();
@@ -144,8 +162,6 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
     {
         super.paintComponent(g);
 
-        int topMargin = 80;
-
         Graphics2D g2 = (Graphics2D) g;
 
         g2.setRenderingHint(
@@ -153,7 +169,10 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
                 RenderingHints.VALUE_ANTIALIAS_ON
         );
 
+        int topMargin = 90;
+
         int panelWidth = getWidth();
+
         int panelHeight = getHeight();
 
         int cellSize = Math.min(
@@ -161,56 +180,74 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
                 (panelHeight - topMargin) / mg.rows
         );
 
-        int offsetX = (panelWidth - mg.cols * cellSize) / 2;
+        int offsetX =
+                (panelWidth - mg.cols * cellSize) / 2;
 
-        int offsetY = topMargin +
-                (panelHeight - topMargin - mg.rows * cellSize) / 2;
-
-        // =========================
-        // HEADER INFO
-        // =========================
-
-        g.setColor(Color.BLACK);
-
-        g.setFont(new Font("Arial", Font.BOLD, 24));
-
-        String info =
-                "Level: " + level +
-                        "    Steps: " + steps +
-                        "    Score: " + score +
-                        "    Time: " + timeLeft;
-
-        FontMetrics fm = g.getFontMetrics();
-
-        int textWidth = fm.stringWidth(info);
-
-        g.drawString(info, (panelWidth - textWidth) / 2, 40);
+        int offsetY =
+                topMargin +
+                        (panelHeight - topMargin -
+                                mg.rows * cellSize) / 2;
 
         // =========================
-        // HOME BUTTON
+        // TOP BAR
         // =========================
 
-        g.setColor(new Color(50,50,50));
+        g.setColor(new Color(25,25,25));
 
-        g.fillRoundRect(20, 20, 120, 40, 20, 20);
+        g.fillRect(0,0,getWidth(),80);
 
         g.setColor(Color.WHITE);
 
-        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.setFont(new Font(
+                "Arial",
+                Font.BOLD,
+                22
+        ));
 
-        g.drawString("HOME", 45, 48);
+        g.drawString(
+                "LEVEL : " + level,
+                360,
+                30
+        );
+
+        g.drawString(
+                "STEPS : " + steps,
+                360,
+                60
+        );
+
+        g.drawString(
+                "SCORE : " + score,
+                560,
+                30
+        );
+
+        g.drawString(
+                "TIME : " + timeLeft,
+                560,
+                60
+        );
 
         // =========================
-        // PATH BUTTON
+        // BUTTONS
         // =========================
 
-        g.setColor(new Color(50,50,50));
+        drawButton(g, homeButton, "HOME");
 
-        g.fillRoundRect(160, 20, 180, 40, 20, 20);
+        drawButton(
+                g,
+                pathButton,
+                showPath ? "HIDE PATH" : "SHOW PATH"
+        );
 
-        g.setColor(Color.WHITE);
+        drawButton(
+                g,
+                pauseButton,
+                frame.gameState == GameState.PAUSED
+                        ? "RESUME"
+                        : "PAUSE"
+        );
 
-        g.drawString("SHOW PATH", 175, 48);
 
         // =========================
         // DRAW MAZE
@@ -222,15 +259,15 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
             {
                 if(mg.maze[i][j] == '#')
                 {
-                    g.setColor(new Color(30,30,30));
+                    g.setColor(new Color(25,25,25));
                 }
                 else if(mg.maze[i][j] == 'E')
                 {
-                    g.setColor(new Color(0,180,0));
+                    g.setColor(new Color(0,200,80));
                 }
                 else
                 {
-                    g.setColor(new Color(220,220,220));
+                    g.setColor(new Color(230,230,230));
                 }
 
                 g.fillRect(
@@ -243,12 +280,12 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
         }
 
         // =========================
-        // SHORTEST PATH
+        // PATH
         // =========================
 
         if(showPath)
         {
-            g.setColor(new Color(0,0,255,100));
+            g.setColor(new Color(0,0,255,90));
 
             for(Point p : shortestPath)
             {
@@ -270,10 +307,10 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
             g.setColor(Color.YELLOW);
 
             g.fillOval(
-                    offsetX + coin.y * cellSize,
-                    offsetY + coin.x * cellSize,
-                    cellSize,
-                    cellSize
+                    offsetX + coin.y * cellSize + 4,
+                    offsetY + coin.x * cellSize + 4,
+                    cellSize - 8,
+                    cellSize - 8
             );
         }
 
@@ -281,35 +318,85 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
         // PLAYER
         // =========================
 
-        g.setColor(new Color(200,50,50));
+        g.setColor(new Color(220,40,40));
 
         g.fillOval(
-                offsetX + playerC * cellSize,
-                offsetY + playerR * cellSize,
-                cellSize,
-                cellSize
+                offsetX + playerC * cellSize + 2,
+                offsetY + playerR * cellSize + 2,
+                cellSize - 4,
+                cellSize - 4
         );
 
         // =========================
-        // PAUSE OVERLAY
+        // PAUSE SCREEN
         // =========================
 
-        if(paused)
+        if(frame.gameState == GameState.PAUSED)
         {
-            g.setColor(new Color(0,0,0,150));
+            g.setColor(new Color(0,0,0,170));
 
             g.fillRect(0,0,getWidth(),getHeight());
 
             g.setColor(Color.WHITE);
 
-            g.setFont(new Font("Arial", Font.BOLD, 40));
+            g.setFont(new Font(
+                    "Arial",
+                    Font.BOLD,
+                    50
+            ));
 
             g.drawString(
-                    "PAUSED",
-                    getWidth()/2 - 100,
-                    getHeight()/2
+                    "GAME PAUSED",
+                    250,
+                    200
             );
+
+            drawButton(g, resumeButton, "RESUME");
+
+            drawButton(g, restartButton, "RESTART");
+
+            drawButton(g, menuButton, "MAIN MENU");
         }
+    }
+
+    // =========================
+    // BUTTON DRAW METHOD
+    // =========================
+
+    void drawButton(
+            Graphics g,
+            Rectangle r,
+            String text
+    )
+    {
+        g.setColor(new Color(45,45,45));
+
+        g.fillRoundRect(
+                r.x,
+                r.y,
+                r.width,
+                r.height,
+                20,
+                20
+        );
+
+        g.setColor(Color.WHITE);
+
+        g.setFont(new Font(
+                "Arial",
+                Font.BOLD,
+                20
+        ));
+
+        FontMetrics fm = g.getFontMetrics();
+
+        int textX =
+                r.x + (r.width - fm.stringWidth(text))/2;
+
+        int textY =
+                r.y + ((r.height + fm.getAscent())/2) - 5;
+
+        g.drawString(text, textX, textY);
     }
 
     // =========================
@@ -318,89 +405,126 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
 
     public void keyPressed(KeyEvent e)
     {
-        // ESC → pause
+        // =========================
+        // ESCAPE = PAUSE
+        // =========================
 
         if(e.getKeyCode() == KeyEvent.VK_ESCAPE)
         {
-            paused = !paused;
-
-            if(paused)
-                gameTimer.stop();
-            else
-                gameTimer.start();
+            if(frame.gameState == GameState.PLAYING)
+            {
+                frame.gameState = GameState.PAUSED;
+            }
+            else if(frame.gameState == GameState.PAUSED)
+            {
+                frame.gameState = GameState.PLAYING;
+            }
 
             repaint();
 
             return;
         }
 
-        if(paused || gameOver)
+        if(frame.gameState != GameState.PLAYING)
+        {
             return;
+        }
 
-        // SAVE / LOAD
+        // =========================
+        // SAVE
+        // =========================
 
         if(e.getKeyCode() == KeyEvent.VK_S)
+        {
             saveGame();
+        }
+
+        // =========================
+        // LOAD
+        // =========================
 
         if(e.getKeyCode() == KeyEvent.VK_L)
+        {
             loadGame();
+        }
 
+        // =========================
         // SHOW PATH
+        // =========================
 
         if(e.getKeyCode() == KeyEvent.VK_P)
         {
             showPath = !showPath;
 
             if(showPath)
+            {
                 findShortestPath();
+            }
 
             repaint();
 
             return;
         }
 
-        // MOVEMENT
+        // =========================
+        // PLAYER MOVEMENT
+        // =========================
+
+        int r = playerR;
+
+        int c = playerC;
+
+        if(e.getKeyCode() == KeyEvent.VK_UP)
+        {
+            r--;
+        }
+
+        if(e.getKeyCode() == KeyEvent.VK_DOWN)
+        {
+            r++;
+        }
+
+        if(e.getKeyCode() == KeyEvent.VK_LEFT)
+        {
+            c--;
+        }
+
+        if(e.getKeyCode() == KeyEvent.VK_RIGHT)
+        {
+            c++;
+        }
 
         if(
-                e.getKeyCode() == KeyEvent.VK_UP ||
-                        e.getKeyCode() == KeyEvent.VK_DOWN ||
-                        e.getKeyCode() == KeyEvent.VK_LEFT ||
-                        e.getKeyCode() == KeyEvent.VK_RIGHT
+                r >= 0 &&
+                        c >= 0 &&
+                        r < mg.rows &&
+                        c < mg.cols &&
+                        mg.maze[r][c] != '#'
         )
         {
-            int r = playerR;
-            int c = playerC;
+            playerR = r;
 
-            if(e.getKeyCode() == KeyEvent.VK_UP) r--;
-            if(e.getKeyCode() == KeyEvent.VK_DOWN) r++;
-            if(e.getKeyCode() == KeyEvent.VK_LEFT) c--;
-            if(e.getKeyCode() == KeyEvent.VK_RIGHT) c++;
+            playerC = c;
 
-            if(
-                    r >= 0 &&
-                            c >= 0 &&
-                            r < mg.rows &&
-                            c < mg.cols &&
-                            mg.maze[r][c] != '#'
-            )
+            steps++;
+
+            Iterator<Point> it =
+                    coins.iterator();
+
+            while(it.hasNext())
             {
-                playerR = r;
-                playerC = c;
+                Point coin = it.next();
 
-                steps++;
-
-                Iterator<Point> it = coins.iterator();
-
-                while(it.hasNext())
+                if(
+                        coin.x == playerR &&
+                                coin.y == playerC
+                )
                 {
-                    Point coin = it.next();
+                    score += 10;
 
-                    if(coin.x == playerR && coin.y == playerC)
-                    {
-                        score += 10;
+                    sound.playEffect("coin.wav");
 
-                        it.remove();
-                    }
+                    it.remove();
                 }
             }
         }
@@ -413,26 +537,45 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
 
         if(mg.maze[playerR][playerC] == 'E')
         {
-            sound.stop();
+            frame.gameState = GameState.GAME_OVER;
 
-            sound.playOnce("win.wav");
+            gameTimer.stop();
+
+            sound.stopBackground();
+
+            sound.playEffect("win.wav");
+
+            Timer winTimer = new Timer(5000, et ->
+            {
+                sound.stopEffect();
+            });
+
+            winTimer.setRepeats(false);
+
+            winTimer.start();
+
 
             String[] options = {
                     "Next Level",
                     "Replay",
-                    "Home"
+                    "Home",
+                    "Exit"
             };
 
             int choice = JOptionPane.showOptionDialog(
                     this,
-                    "Level Complete!",
-                    "Success",
+                    "LEVEL COMPLETED!",
+                    "SUCCESS",
                     JOptionPane.DEFAULT_OPTION,
                     JOptionPane.INFORMATION_MESSAGE,
                     null,
                     options,
                     options[0]
             );
+
+            // =========================
+            // NEXT LEVEL
+            // =========================
 
             if(choice == 0)
             {
@@ -444,17 +587,40 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
                 }
 
                 setLevel(level);
+
+                sound.playLoop("bg.wav");
             }
+
+            // =========================
+            // REPLAY
+            // =========================
+
             else if(choice == 1)
             {
                 setLevel(level);
-            }
-            else
-            {
-                frame.showHome();
+
+                sound.playLoop("bg.wav");
             }
 
-            sound.playLoop("bg.wav");
+            // =========================
+            // HOME
+            // =========================
+
+            else if(choice == 2)
+            {
+                frame.showHome();
+
+                sound.playLoop("bg.wav");
+            }
+
+            // =========================
+            // EXIT
+            // =========================
+
+            else
+            {
+                System.exit(0);
+            }
         }
     }
 
@@ -475,6 +641,7 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
         while(coins.size() < count)
         {
             int r = rand.nextInt(mg.rows);
+
             int c = rand.nextInt(mg.cols);
 
             if(
@@ -499,7 +666,8 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
         Point[][] parent =
                 new Point[mg.rows][mg.cols];
 
-        Queue<Point> q = new LinkedList<>();
+        Queue<Point> q =
+                new LinkedList<>();
 
         q.add(new Point(playerR, playerC));
 
@@ -511,15 +679,16 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
 
             if(mg.maze[p.x][p.y] == 'E')
             {
-                Point cur = p;
-
                 shortestPath.clear();
+
+                Point cur = p;
 
                 while(cur != null)
                 {
                     shortestPath.add(cur);
 
-                    cur = parent[cur.x][cur.y];
+                    cur =
+                            parent[cur.x][cur.y];
                 }
 
                 return;
@@ -535,6 +704,7 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
             for(int[] d : dirs)
             {
                 int nr = p.x + d[0];
+
                 int nc = p.y + d[1];
 
                 if(
@@ -557,35 +727,71 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
     }
 
     // =========================
-    // SAVE / LOAD
+    // SAVE GAME
     // =========================
 
     void saveGame()
     {
-        try(PrintWriter pw = new PrintWriter("save.txt"))
+        try(PrintWriter pw =
+                    new PrintWriter("save.txt"))
         {
             pw.println(level);
+
             pw.println(score);
+
             pw.println(steps);
+
+            pw.println(timeLeft);
+
+            pw.println(playerR);
+
+            pw.println(playerC);
         }
-        catch(Exception e) {}
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
+
+    // =========================
+    // LOAD GAME
+    // =========================
 
     void loadGame()
     {
-        try(Scanner sc = new Scanner(new File("save.txt")))
+        try(Scanner sc =
+                    new Scanner(new File("save.txt")))
         {
             level = sc.nextInt();
+
             score = sc.nextInt();
+
             steps = sc.nextInt();
 
-            setLevel(level);
+            timeLeft = sc.nextInt();
+
+            playerR = sc.nextInt();
+
+            playerC = sc.nextInt();
+
+            mg = new MazeGenerator(
+                    10 + level * 5
+            );
+
+            generateCoins(level * 3);
+
+            frame.gameState =
+                    GameState.PLAYING;
+
+            startTimer(false);
+
+            repaint();
         }
         catch(Exception e)
         {
             JOptionPane.showMessageDialog(
                     this,
-                    "No Save Found!"
+                    "NO SAVE FOUND!"
             );
         }
     }
@@ -597,36 +803,87 @@ public class GamePanel extends JPanel implements KeyListener, MouseListener
     public void mouseClicked(MouseEvent e)
     {
         int x = e.getX();
+
         int y = e.getY();
 
-        // HOME BUTTON
+        // =========================
+        // PAUSE BUTTON
+        // =========================
 
-        if(
-                x >= 20 &&
-                        x <= 140 &&
-                        y >= 20 &&
-                        y <= 60
-        )
+        if(pauseButton.contains(x,y))
+        {
+            if(frame.gameState == GameState.PLAYING)
+            {
+                frame.gameState = GameState.PAUSED;
+            }
+            else if(frame.gameState == GameState.PAUSED)
+            {
+                frame.gameState = GameState.PLAYING;
+            }
+
+            repaint();
+
+            return;
+        }
+
+        // =========================
+        // PAUSE MENU BUTTONS
+        // =========================
+
+        if(frame.gameState == GameState.PAUSED)
+        {
+            if(resumeButton.contains(x,y))
+            {
+                frame.gameState =
+                        GameState.PLAYING;
+            }
+
+            else if(restartButton.contains(x,y))
+            {
+                setLevel(level);
+            }
+
+            else if(menuButton.contains(x,y))
+            {
+                frame.showHome();
+            }
+
+            repaint();
+
+            return;
+        }
+
+        if(frame.gameState != GameState.PLAYING)
+        {
+            return;
+        }
+
+        // =========================
+        // HOME BUTTON
+        // =========================
+
+        if(homeButton.contains(x,y))
         {
             frame.showHome();
         }
 
+        // =========================
         // PATH BUTTON
+        // =========================
 
-        if(
-                x >= 160 &&
-                        x <= 340 &&
-                        y >= 20 &&
-                        y <= 60
-        )
+        if(pathButton.contains(x,y))
         {
             showPath = !showPath;
 
             if(showPath)
+            {
                 findShortestPath();
+            }
 
             repaint();
         }
+
+
     }
 
     public void mousePressed(MouseEvent e) {}

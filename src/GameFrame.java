@@ -1,30 +1,48 @@
 import javax.swing.*;
 import java.awt.*;
 
-public class GameFrame extends JFrame {
-
+public class GameFrame extends JFrame
+{
     CardLayout cardLayout;
+
     JPanel mainPanel;
 
     HomePanel homePanel;
+
     GamePanel gamePanel;
 
     int unlockedLevel = 3;
 
-    GameFrame() {
+    // =========================
+    // GAME STATE
+    // =========================
 
+    GameState gameState = GameState.MENU;
+
+    // =========================
+    // CONSTRUCTOR
+    // =========================
+
+    GameFrame()
+    {
         setTitle("Maze Runner");
-        setSize(900, 900);
+
+        setSize(900,900);
+
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
         setLocationRelativeTo(null);
 
         cardLayout = new CardLayout();
+
         mainPanel = new JPanel(cardLayout);
 
         homePanel = new HomePanel(this);
+
         gamePanel = new GamePanel(this);
 
         mainPanel.add(homePanel, "HOME");
+
         mainPanel.add(gamePanel, "GAME");
 
         add(mainPanel);
@@ -34,7 +52,13 @@ public class GameFrame extends JFrame {
         setVisible(true);
     }
 
-    void startLevel(int level) {
+    // =========================
+    // START GAME
+    // =========================
+
+    void startLevel(int level)
+    {
+        gameState = GameState.PLAYING;
 
         gamePanel.setLevel(level);
 
@@ -43,7 +67,13 @@ public class GameFrame extends JFrame {
         gamePanel.requestFocusInWindow();
     }
 
-    void showHome() {
+    // =========================
+    // SHOW HOME
+    // =========================
+
+    void showHome()
+    {
+        gameState = GameState.MENU;
 
         homePanel = new HomePanel(this);
 
@@ -52,4 +82,3 @@ public class GameFrame extends JFrame {
         cardLayout.show(mainPanel, "HOME");
     }
 }
-

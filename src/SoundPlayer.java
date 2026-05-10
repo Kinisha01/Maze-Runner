@@ -1,23 +1,32 @@
 import javax.sound.sampled.*;
 import java.io.File;
 
-public class SoundPlayer {
+public class SoundPlayer
+{
+    Clip bgClip;
 
-    //Clip clip;
-    Clip currentClip;
+    Clip effectClip;
+
+    // =========================
+    // BACKGROUND MUSIC
+    // =========================
 
     public void playLoop(String path)
     {
         try
         {
-            if(currentClip != null) currentClip.stop();
+            stopBackground();
 
             AudioInputStream audio =
-                    AudioSystem.getAudioInputStream(new File(path));
+                    AudioSystem.getAudioInputStream(
+                            new File(path)
+                    );
 
-            currentClip = AudioSystem.getClip();
-            currentClip.open(audio);
-            currentClip.loop(Clip.LOOP_CONTINUOUSLY);
+            bgClip = AudioSystem.getClip();
+
+            bgClip.open(audio);
+
+            bgClip.loop(Clip.LOOP_CONTINUOUSLY);
         }
         catch(Exception e)
         {
@@ -25,27 +34,57 @@ public class SoundPlayer {
         }
     }
 
-    public void stop()
+    // =========================
+    // STOP BACKGROUND
+    // =========================
+
+    public void stopBackground()
     {
-        if(currentClip != null) currentClip.stop();
+        if(bgClip != null)
+        {
+            bgClip.stop();
+            bgClip.close();
+        }
     }
 
-    public void playOnce(String path)
+    // =========================
+    // PLAY EFFECT
+    // =========================
+
+    public void playEffect(String path)
     {
         try
         {
-            if(currentClip != null) currentClip.stop();
+            stopEffect();
 
             AudioInputStream audio =
-                    AudioSystem.getAudioInputStream(new File(path));
+                    AudioSystem.getAudioInputStream(
+                            new File(path)
+                    );
 
-            currentClip = AudioSystem.getClip();
-            currentClip.open(audio);
-            currentClip.start();
+            effectClip = AudioSystem.getClip();
+
+            effectClip.open(audio);
+
+            effectClip.start();
         }
         catch(Exception e)
         {
             e.printStackTrace();
+        }
+    }
+
+    // =========================
+    // STOP EFFECT
+    // =========================
+
+    public void stopEffect()
+    {
+        if(effectClip != null)
+        {
+            effectClip.stop();
+
+            effectClip.close();
         }
     }
 }
