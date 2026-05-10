@@ -28,33 +28,73 @@ public class MazeGenerator
         addExtraPaths(rows); // more size → more complexity//----------------
         placeExit();
     }
+
+
     void placeExit()
     {
-        for(int i = rows-2; i > 0; i--)
+        for(int i = rows - 2; i > 1; i--)
         {
-            for(int j = cols-2; j > 0; j--)
+            for(int j = cols - 2; j > 1; j--)
             {
                 if(maze[i][j] == '.')
                 {
-                    maze[i][j] = 'E';
-                    return;
+                    int openSides = 0;
+
+                    if(maze[i+1][j] != '#') openSides++;
+                    if(maze[i-1][j] != '#') openSides++;
+                    if(maze[i][j+1] != '#') openSides++;
+                    if(maze[i][j-1] != '#') openSides++;
+
+                    if(openSides >= 1)
+                    {
+                        maze[i][j] = 'E';
+                        return;
+                    }
                 }
             }
         }
     }
+
+
     //optional more paths-------------
-    void addExtraPaths(int count) {
+    void addExtraPaths(int count)
+    {
         Random rand = new Random();
 
-        for(int i = 0; i < count; i++) {
-            int r = rand.nextInt(rows-2) + 1;
-            int c = rand.nextInt(cols-2) + 1;
+        int created = 0;
 
-            if(maze[r][c] == '#') {
-                maze[r][c] = '.'; // break wall → new path
+        while(created < count)
+        {
+            int r = rand.nextInt(rows - 2) + 1;
+            int c = rand.nextInt(cols - 2) + 1;
+
+            // only wall cells
+            if(maze[r][c] != '#')
+                continue;
+
+            // horizontal connector
+            if(
+                    maze[r][c - 1] == '.' &&
+                            maze[r][c + 1] == '.'
+            )
+            {
+                maze[r][c] = '.';
+                created++;
+            }
+
+            // vertical connector
+            else if(
+                    maze[r - 1][c] == '.' &&
+                            maze[r + 1][c] == '.'
+            )
+            {
+                maze[r][c] = '.';
+                created++;
             }
         }
     }
+
+
     //--------------------
     void dfs(int r, int c)
     {
